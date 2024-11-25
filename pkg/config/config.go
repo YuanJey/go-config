@@ -30,6 +30,7 @@ type config struct {
 		DBUserName        string `yaml:"dbUserName" env:"REDIS_USER"`
 		DBPassWord        string `yaml:"dbPassWord" env:"REDIS_PW"`
 	} `yaml:"env"`
+	GoVERSION string `yaml:"dbPassWord" env:"GOVERSION"`
 }
 
 func UnmarshalConfig(config interface{}, configName string) {
@@ -65,11 +66,50 @@ func UnmarshalConfig(config interface{}, configName string) {
 			panic(err.Error())
 		}
 	}
-	loadEnv(&Config.Env)
+	loadEnv(config)
 }
 func init() {
 	UnmarshalConfig(&Config, "config.yaml")
 }
+
+//	func loadEnv(config interface{}) {
+//		val := reflect.ValueOf(config).Elem()
+//		typ := val.Type()
+//
+//		for i := 0; i < val.NumField(); i++ {
+//			field := val.Field(i)
+//			fieldType := typ.Field(i)
+//			envTag := fieldType.Tag.Get("env")
+//			if envTag == "" {
+//				continue
+//			}
+//			envValue := os.Getenv(envTag)
+//			if envValue == "" {
+//				continue
+//			}
+//			switch field.Kind() {
+//			case reflect.String:
+//				field.SetString(envValue)
+//			case reflect.Int:
+//				intValue, err := strconv.Atoi(envValue)
+//				if err != nil {
+//					fmt.Println(fmt.Errorf("invalid value for %s: %v", envTag, err))
+//					continue
+//				}
+//				field.SetInt(int64(intValue))
+//			case reflect.Bool:
+//				boolValue, err := strconv.ParseBool(envValue)
+//				if err != nil {
+//					fmt.Println(fmt.Errorf("invalid value for %s: %v", envTag, err))
+//					continue
+//				}
+//				field.SetBool(boolValue)
+//			default:
+//				fmt.Println(fmt.Errorf("unsupported type for %s", envTag))
+//				continue
+//			}
+//		}
+//	}
 func loadEnv(config interface{}) {
 	val := reflect.ValueOf(config).Elem()
 	typ := val.Type()
@@ -81,10 +121,17 @@ func loadEnv(config interface{}) {
 		if envTag == "" {
 			continue
 		}
+
 		envValue := os.Getenv(envTag)
 		if envValue == "" {
 			continue
 		}
+
+		if field.Kind() == reflect.Struct {
+			loadEnv(field.Addr().Interface()) // 递归处理嵌套结构体
+			continue
+		}
+
 		switch field.Kind() {
 		case reflect.String:
 			field.SetString(envValue)
