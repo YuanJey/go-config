@@ -30,7 +30,9 @@ type config struct {
 		DBUserName        string `yaml:"dbUserName" env:"REDIS_USER"`
 		DBPassWord        string `yaml:"dbPassWord" env:"REDIS_PW"`
 	} `yaml:"env"`
-	GoVERSION string `yaml:"dbPassWord" env:"GOVERSION"`
+	Test struct {
+		GoVERSION string `yaml:"dbPassWord" env:"GOPATH"`
+	}
 }
 
 func UnmarshalConfig(config interface{}, configName string) {
@@ -117,6 +119,12 @@ func loadEnv(config interface{}) {
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
 		fieldType := typ.Field(i)
+		// Check if the field is a struct and need to recursively process it.
+		if field.Kind() == reflect.Struct {
+			// Recursively call loadEnv for nested structs
+			loadEnv(field.Addr().Interface())
+			continue
+		}
 		envTag := fieldType.Tag.Get("env")
 		if envTag == "" {
 			continue
@@ -124,11 +132,6 @@ func loadEnv(config interface{}) {
 
 		envValue := os.Getenv(envTag)
 		if envValue == "" {
-			continue
-		}
-
-		if field.Kind() == reflect.Struct {
-			loadEnv(field.Addr().Interface()) // 递归处理嵌套结构体
 			continue
 		}
 
