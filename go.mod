@@ -1,4 +1,4 @@
-module pl.ghgame.cn/gitea/yuanjie/go-config
+module github.com/YuanJey/go-config
 
 go 1.22.3
 
