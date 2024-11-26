@@ -138,6 +138,11 @@ func loadEnv(config interface{}) {
 		switch field.Kind() {
 		case reflect.String:
 			field.SetString(envValue)
+		case reflect.Slice:
+			// Assuming we want to handle it as a slice of strings
+			if field.Type().Elem().Kind() == reflect.String {
+				field.Index(0).SetString(envValue)
+			}
 		case reflect.Int:
 			intValue, err := strconv.Atoi(envValue)
 			if err != nil {
